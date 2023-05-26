@@ -2,9 +2,9 @@ package de.codesourcery.impl;
 
 import java.util.List;
 import java.util.Stack;
-import java.util.stream.Collectors;
 import de.codesourcery.Alphabet;
 import de.codesourcery.LSystem;
+import de.codesourcery.LSystemCalculator;
 import de.codesourcery.LSystemRenderer;
 import de.codesourcery.ProductionRule;
 import de.codesourcery.ProductionRules;
@@ -26,21 +26,13 @@ public class FractalTree implements LSystem
     axiom  : 0
     rules  : (1 → 11), (0 → 1[0]0)
          */
-
-        List<Alphabet.Symbol> initialState = List.of( zero );
-        ProductionRules rules =new ProductionRules();
+        final List<Alphabet.Symbol> initialState = List.of( zero );
+        final ProductionRules rules = new ProductionRules();
         rules.add(
             new ProductionRule(  one, List.of( one, one ) ),
             new ProductionRule( zero, List.of( one, bracketOpen, zero, bracketClose, zero ) )
         );
-        List<Alphabet.Symbol> result = initialState;
-
-        for ( int i = 1 ; i <= iterationCount ; i++ )
-        {
-            result = rules.apply( result );
-            System.out.println( i+": "+result.stream().map(x->x.toString()).collect( Collectors.joining()) );
-        }
-        return result;
+        return new LSystemCalculator( initialState, rules ).calculate( iterationCount );
     }
 
     @Override
@@ -81,5 +73,15 @@ public class FractalTree implements LSystem
                 }
             }
         };
+    }
+
+    public static void main(String[] args)
+    {
+        final var iter = 14;
+        long start = System.nanoTime();
+        final FractalTree tree = new FractalTree();
+        tree.create(iter);
+        float elapsedMs = (System.nanoTime() - start)/1_000_000f;
+        System.out.println( "TOTAL: "+iter + " iterations took " + elapsedMs + " ms" );
     }
 }

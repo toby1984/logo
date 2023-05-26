@@ -1,6 +1,7 @@
 package de.codesourcery;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -22,16 +23,15 @@ public class ProductionRule
 
     public List<Alphabet.Symbol> apply(List<Alphabet.Symbol> input,int offset)
     {
-        List<Alphabet.Symbol> result = new ArrayList<>(input);
-        // System.out.println( "Rule " + this + " matched @ " + offset );
-        result.remove( offset );
+        List<Alphabet.Symbol> result = new ArrayList<>(input.size() -1 + successor.size());
+        result.addAll( input.subList( 0, offset ) );
         result.addAll( offset, successor );
-        // System.out.println("Now: "+result);
+        result.addAll( input.subList( offset + 1, input.size() ) );
         return result;
     }
 
     public boolean matches(List<Alphabet.Symbol> input, int offset) {
-        return input.get( offset ).matches( predecessor );
+        return input.get( offset ) == predecessor;
     }
 
     @Override
