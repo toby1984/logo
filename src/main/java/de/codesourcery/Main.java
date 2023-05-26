@@ -328,7 +328,7 @@ public class Main extends JFrame
             final Main f = new Main();
 
             final FractalTree tree = new FractalTree();
-            final List<Alphabet.Symbol> data = tree.create(15);
+            final List<Alphabet.Symbol> data = tree.create(25);
 
             // final Turtle wrapper = TurtleSpy.wrap( f.turtle(), x -> System.out.println(x) );
             tree.createRenderer().render( data, tree, f.turtle() );

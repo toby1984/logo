@@ -1,7 +1,6 @@
 package de.codesourcery;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -12,31 +11,31 @@ import java.util.List;
  */
 public class ProductionRule
 {
-    public final Alphabet.Symbol predecessor; // expected term
-    public final List<Alphabet.Symbol> successor; // replacement
+    public final Alphabet.Symbol expected;
+    public final List<Alphabet.Symbol> replacement;
 
-    public ProductionRule(Alphabet.Symbol predecessor, List<Alphabet.Symbol> successor)
+    public ProductionRule(Alphabet.Symbol expected, List<Alphabet.Symbol> replacement)
     {
-        this.predecessor = predecessor;
-        this.successor = successor;
+        this.expected = expected;
+        this.replacement = replacement;
     }
 
     public List<Alphabet.Symbol> apply(List<Alphabet.Symbol> input,int offset)
     {
-        List<Alphabet.Symbol> result = new ArrayList<>(input.size() -1 + successor.size());
+        List<Alphabet.Symbol> result = new ArrayList<>(input.size() -1 + replacement.size());
         result.addAll( input.subList( 0, offset ) );
-        result.addAll( offset, successor );
+        result.addAll( offset, replacement );
         result.addAll( input.subList( offset + 1, input.size() ) );
         return result;
     }
 
-    public boolean matches(List<Alphabet.Symbol> input, int offset) {
-        return input.get( offset ) == predecessor;
+    public boolean matches(Alphabet.Symbol symbol) {
+        return symbol == expected;
     }
 
     @Override
     public String toString()
     {
-        return predecessor + " -> " + successor;
+        return expected + " -> " + replacement;
     }
 }

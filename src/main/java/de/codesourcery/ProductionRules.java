@@ -18,28 +18,26 @@ public class ProductionRules
 
     public List<Alphabet.Symbol> apply(List<Alphabet.Symbol> input)
     {
-        List<Alphabet.Symbol> tmp = input;
+        List<Alphabet.Symbol> result = new ArrayList<>( Math.round( input.size() * 2.5f) );
 
-        for ( int i = 0 ; i < tmp.size() ; i++ )
+outer:
+        for ( int i = 0 ; i < input.size() ; i++ )
         {
+            final Alphabet.Symbol symbol = input.get( i );
+            if ( symbol.isConstant() ) {
+                result.add( symbol );
+                continue;
+            }
             for ( ProductionRule rule : rules )
             {
-                if ( ! tmp.get(i).isConstant() )
+                if ( rule.matches( symbol ) )
                 {
-                    if ( rule.matches( tmp, i ) )
-                    {
-                        final int oldLen = tmp.size();
-                        tmp = rule.apply( tmp, i );
-                        if ( oldLen < tmp.size() )
-                        {
-                            i += (tmp.size() - oldLen);
-                        }
-                        break;
-                    }
+                    result.addAll( rule.replacement );
+                    continue outer;
                 }
             }
         }
-        return tmp;
+        return result;
     }
 
     public ProductionRules add(ProductionRule r1, ProductionRule... additional) {
