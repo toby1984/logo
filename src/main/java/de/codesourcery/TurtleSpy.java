@@ -1,8 +1,6 @@
 package de.codesourcery;
 
 import java.awt.Point;
-import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.util.function.Consumer;
 
 public class TurtleSpy implements Turtle

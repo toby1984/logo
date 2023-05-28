@@ -2,6 +2,7 @@ package de.codesourcery;
 
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
@@ -12,14 +13,12 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
+import de.codesourcery.impl.FractalPlant;
 import de.codesourcery.impl.FractalTree;
-
-import static java.lang.Math.round;
 
 public class Main extends JFrame
 {
@@ -91,13 +90,6 @@ public class Main extends JFrame
         }
     }
 
-    private record Line(float x1, float y1, float x2, float y2) {
-
-        public void updateBoundingBox(Bounds bounds) {
-            bounds.update( x1, y1, x2, y2 );
-        }
-    }
-
     public static final class MyPanel extends JPanel implements Turtle
     {
         public float cursorX, cursorY;
@@ -109,7 +101,9 @@ public class Main extends JFrame
         private float zoomFactor = 1.0f;
 
         private final Bounds bounds = new Bounds();
-        private final List<Line> lines = new ArrayList<>();
+
+        private final LineBuffer lineBuffer = new LineBuffer();
+        private final LineBuffer tmpBuffer = new LineBuffer();
 
         private Point dragStart;
         private Point2D.Float dragStartCenter;
@@ -162,7 +156,7 @@ public class Main extends JFrame
                 public void mouseWheelMoved(MouseWheelEvent e)
                 {
                     final int rotation = -e.getWheelRotation();
-                    zoomFactor = Math.max(0, zoomFactor + zoomIncrement*rotation );
+                    zoomFactor = zoomFactor + zoomIncrement*rotation;
                     repaint();
                 }
             } );
@@ -190,7 +184,7 @@ public class Main extends JFrame
 
             System.out.println( "screen space: " + getWidth() + " x " + getHeight() );
             System.out.println("Bounds: "+bounds+", sx: "+sx+", sy: "+sy);
-            System.out.println( "Drawing " + lines.size() + " lines" );
+            System.out.println( "Drawing " + lineBuffer.lineCount() + " lines" );
 
             // center at origin and then scale to screen space
             op2.concatenate( op1 );
@@ -199,39 +193,25 @@ public class Main extends JFrame
 
             AffineTransform transform = op3;
 
-            long time = System.nanoTime();
-            for ( Line line : lines )
-            {
-//                if ( DEBUG )
-//                {
-//                    System.out.println( "LINE: " + line );
-//                }
-                drawLine( line.x1, line.y1, line.x2, line.y2, g, transform );
-            }
+            long time1 = System.nanoTime();
+            lineBuffer.transform( tmpBuffer, transform , false );
             long time2 = System.nanoTime();
-            long elapsedMillis = (time2-time)/1_000_000;
-            System.out.println( "Frame time: " + elapsedMillis + " ms" );
-        }
 
-        private static final float[] points = new float[4];
-
-        private void drawLine(float x1, float y1, float x2, float y2, Graphics gfx, AffineTransform t)
-        {
-            points[0] = x1;
-            points[1] = y1;
-            points[2] = x2;
-            points[3] = y2;
-            t.transform( points, 0, points, 0, points.length/2 );
-//            System.out.println("Mapped line ("+x1+", "+y1+") -> ("+x2+","+y2+") to" +
-//                " ("+points[0]+", "+points[1]+") -> ("+points[2]+","+points[3]+")");
-            gfx.drawLine( round( points[0] ), round( points[1] ), round( points[2] ), round( points[3] ) );
-
+            final MyVisitor visitor = new MyVisitor( (Graphics2D) g );
+            tmpBuffer.visit( visitor );
+            visitor.finish();
+            System.out.println("MERGED lines: "+visitor.merged+" / drawn: "+visitor.drawn);
+            long time3 = System.nanoTime();
+            long transformMillis = (time2-time1)/1_000_000;
+            long drawMillis = (time3-time2) / 1_000_000;
+            long totalMillis = (time3-time1) / 1_000_000;
+            System.out.println( "Frame time: " + totalMillis + " ms (transform: " + transformMillis + " ms, drawing: " + drawMillis + " ms" );
         }
 
         @Override
         public Turtle reset()
         {
-            lines.clear();
+            lineBuffer.clear();
             bounds.reset();
 
             cursorX = getWidth() / 2;
@@ -264,9 +244,8 @@ public class Main extends JFrame
             float y = (float) (cursorY + dy);
 
             if ( penIsDown ) {
-                final Line l = new Line( cursorX, cursorY, x, y );
-                l.updateBoundingBox( bounds );
-                lines.add( l );
+                lineBuffer.append( cursorX, cursorY, x, y   );
+                bounds.update( cursorX, cursorY, x, y  );
             }
             cursorX = x;
             cursorY = y;
@@ -319,6 +298,85 @@ public class Main extends JFrame
         private static float degToRad(float deg) {
             return (float) (deg * Math.PI/180f);
         }
+
+        private class MyVisitor implements LineBuffer.Visitor
+        {
+            private static final boolean MERGE = false;
+
+            private final Graphics2D gfx;
+            private final int w;
+            private final int h;
+            public int merged;
+            public int drawn;
+
+            private float lastDx, lastDy;
+            private float lastX1, lastY1;
+            private float lastX2, lastY2;
+            private boolean first = true;
+
+            public MyVisitor(Graphics2D g)
+            {
+                w = getWidth();
+                h = getHeight();
+                gfx = g;
+            }
+
+            public void finish() {
+                if ( ! first ) {
+                    drawLine( lastX1, lastY1, lastX2, lastY2 );
+                }
+            }
+
+            private boolean contains(float  x, float y) {
+                return x >= 0 && y >= 0 && x < w && y < h;
+            }
+
+            @Override
+            public void visitLine(float x1, float y1, float x2, float y2)
+            {
+                if ( contains( x1, y1 ) && contains( x2, y2 ) )
+                {
+                    if ( MERGE )
+                    {
+                        float dx = x2 - x1;
+                        float dy = y2 - y1;
+
+                        if ( first )
+                        {
+                            first = false;
+                            lastDx = dx;
+                            lastDy = dy;
+                            lastX1 = x1;
+                            lastX2 = x2;
+                            lastY1 = y1;
+                            lastY2 = y2;
+                            return;
+                        }
+
+                        // TODO: Maybe equaly check needs to be replaced with some fuzzy check so account for FP instability ?
+                        if ( lastDx == dx && lastDy == dy && lastX2 == x1 && lastY2 == y1 )
+                        {
+                            lastX2 = x2;
+                            lastY2 = y2;
+                            merged++;
+                            return;
+                        }
+
+                        first = true;
+                        drawLine( lastX1, lastY1, lastX2, lastY2 );
+                        drawLine( x1, y1, x2, y2 );
+                    } else {
+                        drawLine( x1, y1, x2, y2 );
+                    }
+                }
+            }
+
+            private void drawLine(float x1, float y1, float x2, float y2)
+            {
+                drawn++;
+                gfx.drawLine( (int) x1, (int) y1 , (int) x2, (int) y2 );
+            }
+        }
     }
 
     public static void main(String[] args) throws InterruptedException, InvocationTargetException
@@ -327,8 +385,8 @@ public class Main extends JFrame
         {
             final Main f = new Main();
 
-            final FractalTree tree = new FractalTree();
-            final List<Alphabet.Symbol> data = tree.create(25);
+            final LSystem tree = new FractalTree();
+            final List<Alphabet.Symbol> data = tree.create(15);
 
             // final Turtle wrapper = TurtleSpy.wrap( f.turtle(), x -> System.out.println(x) );
             tree.createRenderer().render( data, tree, f.turtle() );

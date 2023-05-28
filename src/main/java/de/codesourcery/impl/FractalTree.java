@@ -50,24 +50,26 @@ public class FractalTree implements LSystem
 
             final Stack<TurtleState> stack = new Stack<>();
 
+            final float angle = 10;
+            final float angle2 = 20;
             for ( int i = 0; i < data.size(); i++ )
             {
                 final Alphabet.Symbol symbol = data.get( i );
                 if ( zero.matches( symbol ) ) {
                     turtle.forward( lineLen );
                     final TurtleState junction = turtle.state();
-                    turtle.turnLeft( 20 ).forward( lineLen / 2 );
+                    turtle.turnLeft( angle2 ).forward( lineLen / 2 );
                     turtle.recall( junction );
-                    turtle.turnRight( 20 ).forward( lineLen / 2 );
+                    turtle.turnRight( angle2 ).forward( lineLen / 2 );
                 } else if ( one.matches( symbol ) ) {
                     turtle.forward( lineLen );
                 }
                 else if ( bracketOpen.matches( symbol ) ) {
                     stack.push( turtle.state() );
-                    turtle.turnLeft( 45 );
+                    turtle.turnLeft( angle );
                 } else if ( bracketClose.matches( symbol ) ) {
                     turtle.recall( stack.pop() );
-                    turtle.turnRight( 45 );
+                    turtle.turnRight( angle );
                 } else {
                     throw new UnsupportedOperationException( "Unknown symbol: " + symbol );
                 }
