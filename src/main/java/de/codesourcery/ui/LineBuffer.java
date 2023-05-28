@@ -1,6 +1,7 @@
-package de.codesourcery;
+package de.codesourcery.ui;
 
 import java.awt.geom.AffineTransform;
+import de.codesourcery.util.MyFloatBuffer;
 
 public final class LineBuffer
 {

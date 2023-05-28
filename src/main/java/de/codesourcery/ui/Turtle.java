@@ -1,4 +1,4 @@
-package de.codesourcery;
+package de.codesourcery.ui;
 
 import java.awt.Point;
 

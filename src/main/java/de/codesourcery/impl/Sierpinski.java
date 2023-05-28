@@ -7,7 +7,7 @@ import de.codesourcery.LSystemCalculator;
 import de.codesourcery.LSystemRenderer;
 import de.codesourcery.ProductionRule;
 import de.codesourcery.ProductionRules;
-import de.codesourcery.Turtle;
+import de.codesourcery.ui.Turtle;
 
 public class Sierpinski implements LSystem
 {

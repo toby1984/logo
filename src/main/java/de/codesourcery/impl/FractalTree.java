@@ -8,7 +8,7 @@ import de.codesourcery.LSystemCalculator;
 import de.codesourcery.LSystemRenderer;
 import de.codesourcery.ProductionRule;
 import de.codesourcery.ProductionRules;
-import de.codesourcery.TurtleState;
+import de.codesourcery.ui.TurtleState;
 
 public class FractalTree implements LSystem
 {

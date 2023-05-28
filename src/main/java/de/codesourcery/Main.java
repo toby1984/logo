@@ -19,6 +19,9 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import de.codesourcery.impl.FractalPlant;
 import de.codesourcery.impl.FractalTree;
+import de.codesourcery.ui.LineBuffer;
+import de.codesourcery.ui.Turtle;
+import de.codesourcery.ui.TurtleState;
 
 public class Main extends JFrame
 {
@@ -385,8 +388,8 @@ public class Main extends JFrame
         {
             final Main f = new Main();
 
-            final LSystem tree = new FractalTree();
-            final List<Alphabet.Symbol> data = tree.create(15);
+            final LSystem tree = new FractalPlant();
+            final List<Alphabet.Symbol> data = tree.create(11);
 
             // final Turtle wrapper = TurtleSpy.wrap( f.turtle(), x -> System.out.println(x) );
             tree.createRenderer().render( data, tree, f.turtle() );

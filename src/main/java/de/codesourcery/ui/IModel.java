@@ -1,4 +1,4 @@
-package de.codesourcery;
+package de.codesourcery.ui;
 
 public interface IModel<T>
 {
